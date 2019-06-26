@@ -79,11 +79,12 @@ int main(int argc, char **argv)
     dest = creat(server_path, 0666);
     if (dest == -1)
         {
-          printf(" Impossivel criar o arquivo %s\n", argv[2]); 
+          printf(" Impossivel criar o arquivo %s\n", buffer.filename); 
           exit (1) ;
         }
     status = recvfrom(sock, &buffer, buflen, 0, (struct sockaddr *)&clientSocket, &sinlen);
     control_comm = true;
+    //copy
     while(control_comm){
       buflen = strlen(buffer.message);
       write (dest, &buffer.message, buflen);
@@ -99,21 +100,19 @@ int main(int argc, char **argv)
       strcpy (buffer.opcode,"OK");
       strcpy (buffer.message,"You can download");
       int src;
-      src = open ("teste.txt",O_RDONLY);
+      src = open (buffer.filename,O_RDONLY);
       if (src == -1)
         {
-          printf("Impossivel abrir o arquivo %s\n", argv[1]);
-          exit (1); 
+          printf("Impossivel abrir o arquivo %s\n", buffer.filename);
+          exit(1); 
         }
       int cont;
-      //cont = read(src, &buffer.message, sizeof(buffer.message));
-      //status = sendto(sock, &buffer, buflen, 0, (struct sockaddr *)&sock_in, sinlen);
+      //copy
       while ((cont = read(src, &buffer.message, sizeof(buffer.message))) > 0 ){
-        status = sendto(sock, &buffer, buflen, 0, (struct sockaddr*) &clientSocket, sinlen); //Only works with 'status' instead of buflen
+        status = sendto(sock, &buffer, buflen, 0, (struct sockaddr*) &clientSocket, sinlen); 
       }
       sprintf(buffer.message, "Finalizou");
-      status = sendto(sock, &buffer, buflen, 0, (struct sockaddr*) &clientSocket, sinlen); //Only works with 'status' instead of buflen
-      //        write (dest, &buffer.message, cont) ;
+      status = sendto(sock, &buffer, buflen, 0, (struct sockaddr*) &clientSocket, sinlen); 
     }
   }  
   //Close socket
