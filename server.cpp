@@ -6,6 +6,8 @@ int main(int argc, char **argv)
   //Socket variables
   int sock, status, buflen;
   unsigned sinlen;
+  bool control_comm;
+  char server_path[50];
   //socklen_t sinlen;
   struct sockaddr_in sock_in, clientSocket;
   //char buffer[MAXBUF]; //Where the message will be stored
@@ -62,28 +64,58 @@ int main(int argc, char **argv)
     cout<<">> bye bye"<<endl;
     //exit(1);
   }
-
-  //if it is a download command, is there the file?
-  if(trans_type(buffer.opcode)==2){
-    //check_file
+  cout<<buffer.filename<<endl;
+  if (check_up_dw_option(buffer.opcode) == 1){
+    cout<<"upload"<<endl;
+    strcpy (buffer.opcode,"OK");
+    strcpy (buffer.message,"You can upload");
+    //Send response to client with the same data (echo)
+    cout<<">> Sending response to client (echo)"<<endl;
+    status = sendto(sock, &buffer, buflen, 0, (struct sockaddr*) &clientSocket, sinlen); //Only works with 'status' instead of buflen
+    //cout<<">> Sendto status: "<<status<<buflen<<endl;
+    int dest;
+    strcpy(server_path, "Servidor/");
+    strcat(server_path, buffer.filename);
+    dest = creat(server_path, 0666);
+    if (dest == -1)
+        {
+          printf(" Impossivel criar o arquivo %s\n", argv[2]); 
+          exit (1) ;
+        }
+    status = recvfrom(sock, &buffer, buflen, 0, (struct sockaddr *)&clientSocket, &sinlen);
+    control_comm = true;
+    while(control_comm){
+      buflen = strlen(buffer.message);
+      write (dest, &buffer.message, buflen);
+      status = recvfrom(sock, &buffer, buflen, 0, (struct sockaddr *)&clientSocket, &sinlen);
+      if (strcmp(buffer.message, "Finalizou") == 0){
+        control_comm = false;
+      }
+    }
   }
-
-  strcpy (buffer.opcode,"OK");
-  strcpy (buffer.message,"Teste22");
-  //Send response to client with the same data (echo)
-  cout<<">> Sending response to client (echo)"<<endl;
-  status = sendto(sock, &buffer, buflen, 0, (struct sockaddr*) &clientSocket, sinlen); //Only works with 'status' instead of buflen
-  //cout<<">> Sendto status: "<<status<<buflen<<endl;
-  int dest;
-  dest = creat("vivendo.txt", 0666);
-  if (dest == -1)
-       {
-         printf(" Impossivel criar o arquivo %s\n", argv[2]); 
-         exit (1) ;
-       }
-  status = recvfrom(sock, &buffer, buflen, 0, (struct sockaddr *)&clientSocket, &sinlen);
-  buflen = sizeof(buffer.message);
-  write (dest, &buffer.message, buflen) ;
+  else if (check_up_dw_option(buffer.opcode) == 2){
+    cout<<"download"<<endl;
+    if (check_file(buffer.filename) == true){
+      strcpy (buffer.opcode,"OK");
+      strcpy (buffer.message,"You can download");
+      int src;
+      src = open ("teste.txt",O_RDONLY);
+      if (src == -1)
+        {
+          printf("Impossivel abrir o arquivo %s\n", argv[1]);
+          exit (1); 
+        }
+      int cont;
+      //cont = read(src, &buffer.message, sizeof(buffer.message));
+      //status = sendto(sock, &buffer, buflen, 0, (struct sockaddr *)&sock_in, sinlen);
+      while ((cont = read(src, &buffer.message, sizeof(buffer.message))) > 0 ){
+        status = sendto(sock, &buffer, buflen, 0, (struct sockaddr*) &clientSocket, sinlen); //Only works with 'status' instead of buflen
+      }
+      sprintf(buffer.message, "Finalizou");
+      status = sendto(sock, &buffer, buflen, 0, (struct sockaddr*) &clientSocket, sinlen); //Only works with 'status' instead of buflen
+      //        write (dest, &buffer.message, cont) ;
+    }
+  }  
   //Close socket
   shutdown(sock, 2);
   close(sock);

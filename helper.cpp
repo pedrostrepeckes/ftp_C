@@ -16,6 +16,7 @@ using namespace std;
 
 struct message{
 	char opcode[3];
+	char filename[32];
     char message[MAXBUF];
 };
 
@@ -35,15 +36,15 @@ bool enough_number_of_param(int argc){
 	}
 }
 
-bool check_up_dw_option(char *option){
+int check_up_dw_option(char *option){
 	if(option[0] == 'U' || option[1] == 'P'){
-		return true;
+		return 1;
 	}
 	if(option[0] == 'D' || option[1] == 'W'){
-		return true;
+		return 2;
 	}
 	cout<<">> Wrong option Upload or Download"<<endl;
-	return false;
+	return 0;
 }
 
 bool check_file(char *filename){
@@ -54,15 +55,6 @@ bool check_file(char *filename){
 	}
 	cout<<"File not found"<<endl;
 	return false;
-}
-
-int trans_type(char opcode[]){
-	if(opcode == "UP"){
-		return 1;	
-	}
-	if(opcode == "DW"){
-		return 2;
-	}
 }
 
 void tranfer_data_to_server(char *filename){
