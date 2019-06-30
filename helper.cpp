@@ -17,6 +17,7 @@ using namespace std;
 struct message{
 	char opcode[3];
 	char filename[32];
+	int control;
     char message[MAXBUF];
 };
 

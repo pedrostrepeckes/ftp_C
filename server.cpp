@@ -86,11 +86,14 @@ int main(int argc, char **argv)
     control_comm = true;
     //copy
     while(control_comm){
-      buflen = strlen(buffer.message);
-      write (dest, &buffer.message, buflen);
+      //buflen = strlen(buffer.message);
+      write (dest, &buffer.message, buffer.control);
+      sprintf(buffer.message, " "); 
       status = recvfrom(sock, &buffer, buflen, 0, (struct sockaddr *)&clientSocket, &sinlen);
+      //cout<<buffer.message<<endl;
       if (strcmp(buffer.message, "Finalizou") == 0){
         control_comm = false;
+        close(dest);
       }
     }
   }
@@ -106,11 +109,18 @@ int main(int argc, char **argv)
           printf("Impossivel abrir o arquivo %s\n", buffer.filename);
           exit(1); 
         }
+      sprintf(buffer.message, "Iniciando download");
+      status = sendto(sock, &buffer, buflen, 0, (struct sockaddr*) &clientSocket, sinlen); 
       int cont;
       //copy
       while ((cont = read(src, &buffer.message, sizeof(buffer.message))) > 0 ){
+        buffer.control = cont;
         status = sendto(sock, &buffer, buflen, 0, (struct sockaddr*) &clientSocket, sinlen); 
+        sleep(0.01);
       }
+      //status = sendto(sock, &buffer, buflen, 0, (struct sockaddr*) &clientSocket, sinlen); 
+      cout<<"Finalizou"<<endl;
+      close(src);
       sprintf(buffer.message, "Finalizou");
       status = sendto(sock, &buffer, buflen, 0, (struct sockaddr*) &clientSocket, sinlen); 
     }

@@ -66,18 +66,22 @@ int main(int argc, char *argv[])
       cout<<">> Recvfrom status: "<<status<<endl;
       cout<<">> Message received: "<<answer_server_opcode<<endl;
       int src;
-      src = open (argv[1],O_RDONLY);
+      src = open (argv[3],O_RDONLY);
       if (src == -1)
         {
-          printf("Impossivel abrir o arquivo %s\n", argv[1]);
+          printf("Impossivel abrir o arquivo %s\n", argv[3]);
           exit(1); 
         }
       int cont;
       //copy
       while ((cont = read(src, &buffer.message, sizeof(buffer.message))) > 0 ){
+        buffer.control = cont;
+        sleep(0.01);
         status = sendto(sock, &buffer, buflen, 0, (struct sockaddr *)&sock_in, sinlen);
       }
-      sprintf(buffer.message, "Finalizou");
+      cout<<"Finalizou"<<endl;
+      close(src);
+      sprintf(buffer.message, "Finalizou");      
       status = sendto(sock, &buffer, buflen, 0, (struct sockaddr *)&sock_in, sinlen);
     }else{
       cout<<"There is a problem with the server"<<endl;
@@ -109,14 +113,19 @@ int main(int argc, char *argv[])
           exit(1);
         }
     //copy
+    cout<<"message "<<buffer.message<<endl;
+    buflen = sizeof(buffer);
     status = recvfrom(sock, &buffer, buflen, 0, (struct sockaddr *)&sock_in, &sinlen);
     control_comm = true;
     while(control_comm){
-      buflen = strlen(buffer.message);
-      write (dest, &buffer.message, buflen);
+      //buflen = strlen(buffer.message);
+      cout<<"message "<<buffer.message<<endl;
+      write (dest, &buffer.message, buffer.control);
+      sprintf(buffer.message, " "); 
       status = recvfrom(sock, &buffer, buflen, 0, (struct sockaddr *)&sock_in, &sinlen);
       if (strcmp(buffer.message, "Finalizou") == 0){
         control_comm = false;
+        close(dest);
       }
     }
   } 
